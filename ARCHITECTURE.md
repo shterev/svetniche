@@ -68,8 +68,8 @@
 ### Technology Stack
 - **Framework**: React 19.x
 - **Build Tool**: Vite 7.x
+- **UI Library**: Material UI (MUI) 7.x
 - **Mapping**: Leaflet.js or Mapbox GL JS
-- **Styling**: TailwindCSS
 - **State Management**: React Context API or Zustand (lightweight)
 - **HTTP Client**: Fetch API or Axios
 - **Form Validation**: Zod or React Hook Form

@@ -72,8 +72,8 @@ npm run lint     # Run ESLint
 **Frontend:**
 - React 19.x - UI framework
 - Vite 7.x - Build tool
+- Material UI 7.x - Component library
 - Leaflet.js - Interactive maps (to be added)
-- TailwindCSS - Styling (to be added)
 
 **Backend (planned):**
 - Node.js + Express - API server
