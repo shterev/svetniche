@@ -105,6 +105,39 @@ npm run lint     # Run ESLint
 
 This is a community project for Chepintsi village. Contributions are welcome!
 
+## 🚢 Deployment
+
+### Client-Side Routing Configuration
+
+This app uses React Router for client-side routing. To ensure routes work correctly after refresh in production, the following configurations are included:
+
+#### Netlify
+Already configured via `public/_redirects` file. No additional setup needed.
+
+#### Vercel
+Already configured via `vercel.json` file. No additional setup needed.
+
+#### Self-Hosted (Nginx)
+Use the provided `nginx.conf.example` as a template:
+
+```bash
+# Copy and edit the configuration
+sudo cp nginx.conf.example /etc/nginx/sites-available/svetniche
+sudo ln -s /etc/nginx/sites-available/svetniche /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+**Key Configuration**: All routes must serve `index.html` to allow React Router to handle routing.
+
+### Build for Production
+
+```bash
+npm run build
+```
+
+The production files will be in the `dist/` directory.
+
 ## 📄 License
 
 MIT License - Feel free to use this for your own village!
