@@ -6,13 +6,10 @@ import {
   AppBar,
   Toolbar,
   IconButton,
-  Typography,
   Tooltip,
 } from '@mui/material'
 import {
-  Lightbulb,
   ArrowBack,
-  AddLocation,
   MyLocation,
 } from '@mui/icons-material'
 import MapView from '../../components/MapView'
@@ -28,34 +25,21 @@ const Map = () => {
   }
 
   return (
-    <Box sx={{ height: '100vh' }}>
-      {/* App Bar */}
+    <Box sx={{ height: '100dvh', fallbacks: [{ height: '100vh' }] }}>
       <AppBar position="static" color="primary" elevation={1}>
-        <Toolbar>
+        <Toolbar sx={{ minHeight: 48, height: 48 }}>
           <IconButton
             edge="start"
             color="inherit"
             onClick={() => navigate('/')}
-            sx={{ mr: 2 }}
+            size="small"
           >
             <ArrowBack />
           </IconButton>
-          <Lightbulb sx={{ mr: 2 }} />
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            Карта на докладите
-          </Typography>
-          <Button
-            color="inherit"
-            startIcon={<AddLocation />}
-            onClick={() => alert('Форма за нов доклад (в разработка)')}
-          >
-            Нов доклад
-          </Button>
         </Toolbar>
       </AppBar>
 
-      {/* Map Container */}
-      <Box sx={{ height: 'calc(100vh - 64px)', position: 'relative' }}>
+      <Box sx={{ height: 'calc(100dvh - 48px)', fallbacks: [{ height: 'calc(100vh - 48px)' }], position: 'relative' }}>
         <MapView ref={mapRef} />
 
         {/* Floating Action Button for Current Location */}
@@ -63,7 +47,7 @@ const Map = () => {
           <Box
             sx={{
               position: 'absolute',
-              bottom: 24,
+              bottom: 'max(24px, env(safe-area-inset-bottom))',
               right: 24,
               zIndex: 1000,
             }}

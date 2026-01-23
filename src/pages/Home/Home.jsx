@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Container,
@@ -16,7 +16,6 @@ import {
 import {
   Lightbulb,
   Map,
-  AddLocation,
   AdminPanelSettings,
   CheckCircle,
   Error,
@@ -24,7 +23,62 @@ import {
 
 const Home = () => {
   const navigate = useNavigate()
-  const [reportCount, setReportCount] = useState(3)
+  const [reportCount, setReportCount] = useState(0)
+  const [markers, setMarkers] = useState([])
+
+  // Helper function to format relative time
+  const getRelativeTime = (dateString) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffMs = now - date
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
+
+    if (diffMins < 1) return 'Преди малко'
+    if (diffMins < 60) return `Преди ${diffMins} ${diffMins === 1 ? 'минута' : 'минути'}`
+    if (diffHours < 24) return `Преди ${diffHours} ${diffHours === 1 ? 'час' : 'часа'}`
+    return `Преди ${diffDays} ${diffDays === 1 ? 'ден' : 'дни'}`
+  }
+
+  // Load markers from localStorage
+  useEffect(() => {
+    const loadMarkers = () => {
+      const savedMarkers = localStorage.getItem('userMarkers')
+      if (savedMarkers) {
+        try {
+          const parsedMarkers = JSON.parse(savedMarkers)
+          // Sort by newest first
+          const sortedMarkers = parsedMarkers.sort((a, b) => 
+            new Date(b.createdAt) - new Date(a.createdAt)
+          )
+          setMarkers(sortedMarkers)
+          setReportCount(sortedMarkers.length)
+        } catch (error) {
+          console.error('Failed to load markers from localStorage:', error)
+          setMarkers([])
+          setReportCount(0)
+        }
+      } else {
+        setMarkers([])
+        setReportCount(0)
+      }
+    }
+
+    // Load initially
+    loadMarkers()
+
+    // Listen for storage changes from other tabs/windows
+    window.addEventListener('storage', loadMarkers)
+
+    // Poll for changes every second (in case MapView updates in same tab)
+    const interval = setInterval(loadMarkers, 1000)
+
+    return () => {
+      window.removeEventListener('storage', loadMarkers)
+      clearInterval(interval)
+    }
+  }, [])
 
   return (
     <Box sx={{ flexGrow: 1 }}>
@@ -51,29 +105,16 @@ const Home = () => {
           <Typography variant="h6" color="text.secondary" paragraph>
             Report Broken Street Lights in Chepintsi, Bulgaria
           </Typography>
-          <Stack
-            direction="row"
-            spacing={2}
-            justifyContent="center"
-            sx={{ mt: 3 }}
-          >
+          <Box sx={{ mt: 3 }}>
             <Button
               variant="contained"
-              size="large"
-              startIcon={<AddLocation />}
-              onClick={() => setReportCount(reportCount + 1)}
-            >
-              Нов доклад
-            </Button>
-            <Button
-              variant="outlined"
               size="large"
               startIcon={<Map />}
               onClick={() => navigate('/map')}
             >
               Виж картата
             </Button>
-          </Stack>
+          </Box>
         </Box>
 
         {/* Stats Cards */}
@@ -134,49 +175,36 @@ const Home = () => {
           </Card>
         </Stack>
 
-        {/* Demo Report Cards */}
-        <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
-          Последни доклади
-        </Typography>
-        <Stack spacing={2}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <Box>
-                  <Typography variant="h6" component="div" gutterBottom>
-                    Главна улица до кметството
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" paragraph>
-                    Уличната лампа не работи от 3 дни. Тъмно е вечер и е опасно.
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Докладвано преди 2 часа
-                  </Typography>
-                </Box>
-                <Chip label="Чака" color="error" size="small" />
-              </Box>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <Box>
-                  <Typography variant="h6" component="div" gutterBottom>
-                    До автобусната спирка
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" paragraph>
-                    Мигаща лампа, вероятно проблем с контактора.
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Докладвано преди 1 ден
-                  </Typography>
-                </Box>
-                <Chip label="Поправено" color="success" size="small" />
-              </Box>
-            </CardContent>
-          </Card>
-        </Stack>
+        {/* Recent Reports - Show only if there are markers */}
+        {markers.length > 0 && (
+          <>
+            <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
+              Последни доклади
+            </Typography>
+            <Stack spacing={2}>
+              {markers.map((marker) => (
+                <Card key={marker.id}>
+                  <CardContent>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <Box sx={{ flex: 1 }}>
+                        <Typography variant="h6" component="div" gutterBottom>
+                          {marker.address || 'Зареждане адрес...'}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" paragraph>
+                          Координати: {marker.lat.toFixed(6)}, {marker.lng.toFixed(6)}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Докладвано {getRelativeTime(marker.createdAt)}
+                        </Typography>
+                      </Box>
+                      <Chip label="Чака" color="error" size="small" />
+                    </Box>
+                  </CardContent>
+                </Card>
+              ))}
+            </Stack>
+          </>
+        )}
 
         {/* Info Box */}
         <Card sx={{ mt: 4, bgcolor: 'primary.main', color: 'primary.contrastText' }}>
@@ -189,10 +217,7 @@ const Home = () => {
                 ✓ Натиснете на картата за да маркирате местоположението
               </Typography>
               <Typography variant="body2">
-                ✓ Опишете проблема (незадължително качете снимка)
-              </Typography>
-              <Typography variant="body2">
-                ✓ Получавате код за редакция на доклада си
+                ✓ Изтрийте маркера ако е грешен, като натиснете на него и после бутона "Изтрий"
               </Typography>
               <Typography variant="body2">
                 ✓ Администраторът маркира когато е поправено
