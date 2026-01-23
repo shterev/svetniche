@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Box,
@@ -6,6 +7,7 @@ import {
   Toolbar,
   IconButton,
   Typography,
+  Tooltip,
 } from '@mui/material'
 import {
   Lightbulb,
@@ -17,6 +19,13 @@ import MapView from '../../components/MapView'
 
 const Map = () => {
   const navigate = useNavigate()
+  const mapRef = useRef(null)
+
+  const handleLocateMe = () => {
+    if (mapRef.current) {
+      mapRef.current.locateUser()
+    }
+  }
 
   return (
     <Box sx={{ height: '100vh' }}>
@@ -47,31 +56,38 @@ const Map = () => {
 
       {/* Map Container */}
       <Box sx={{ height: 'calc(100vh - 64px)', position: 'relative' }}>
-        <MapView />
+        <MapView ref={mapRef} />
 
         {/* Floating Action Button for Current Location */}
-        <Box
-          sx={{
-            position: 'absolute',
-            bottom: 24,
-            right: 24,
-            zIndex: 1000,
-          }}
-        >
-          <Button
-            variant="contained"
-            color="primary"
+        <Tooltip title="Моята локация" placement="left">
+          <Box
             sx={{
-              minWidth: 56,
-              minHeight: 56,
-              borderRadius: '50%',
-              p: 0,
+              position: 'absolute',
+              bottom: 24,
+              right: 24,
+              zIndex: 1000,
             }}
-            onClick={() => alert('Центрирай на моята локация (в разработка)')}
           >
-            <MyLocation />
-          </Button>
-        </Box>
+            <Button
+              variant="contained"
+              color="primary"
+              sx={{
+                minWidth: 56,
+                minHeight: 56,
+                borderRadius: '50%',
+                p: 0,
+                boxShadow: 3,
+                '&:hover': {
+                  boxShadow: 6,
+                }
+              }}
+              onClick={handleLocateMe}
+              aria-label="Център на моята локация"
+            >
+              <MyLocation />
+            </Button>
+          </Box>
+        </Tooltip>
       </Box>
     </Box>
   )

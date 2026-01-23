@@ -11,6 +11,7 @@ Civic web application for reporting broken street lights in Chepintsi village, B
 ### Key Features
 
 - 🗺️ **Interactive Map** - Click to report location
+- 📍 **Auto Location** - Automatically centers on your position
 - 📝 **Simple Reporting** - No authentication needed
 - 🔐 **Ownership Tokens** - Edit your own reports
 - 👁️ **Public Visibility** - Everyone sees all reports
@@ -55,6 +56,10 @@ svetniche/
 ## 📖 Documentation
 
 - **[ARCHITECTURE.md](./ARCHITECTURE.md)** - Complete system architecture, data models, API design, and deployment guide
+- **[LEAFLET_INTEGRATION.md](./LEAFLET_INTEGRATION.md)** - Leaflet map setup, configuration, and customization
+- **[GEOLOCATION_GUIDE.md](./GEOLOCATION_GUIDE.md)** - User location detection, permissions, and troubleshooting
+- **[ROUTING_GUIDE.md](./ROUTING_GUIDE.md)** - Client-side routing and deployment configurations
+- **[MUI_SETUP.md](./MUI_SETUP.md)** - Material UI theme and component usage
 
 ## 🛠️ Development
 
