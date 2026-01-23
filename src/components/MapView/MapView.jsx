@@ -19,7 +19,8 @@ const DefaultIcon = L.icon({
 L.Marker.prototype.options.icon = DefaultIcon
 
 // Chepintsi village coordinates (Chepintsi 1554, Bulgaria)
-const CHEPINTSI_CENTER = [42.7050, 23.7250]
+// Source: 42.7594788°N, 23.4286263°E - Chepintsi, Sofia City Province
+const CHEPINTSI_CENTER = [42.7595, 23.4286]
 const DEFAULT_ZOOM = 15
 
 const MapView = () => {

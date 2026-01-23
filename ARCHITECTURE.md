@@ -475,8 +475,8 @@ CORS_ORIGIN=https://svetniche.chepintsi.bg
 ```javascript
 // Frontend (.env)
 VITE_API_URL=https://api.svetniche.chepintsi.bg
-VITE_MAP_CENTER_LAT=42.7050
-VITE_MAP_CENTER_LNG=23.7250
+VITE_MAP_CENTER_LAT=42.7595
+VITE_MAP_CENTER_LNG=23.4286
 VITE_MAP_ZOOM=15
 ```
 
@@ -512,8 +512,8 @@ Headers: {
   'X-Ownership-Token': 'uuid-v4-token'
 }
 Body: {
-  latitude: 42.7050,
-  longitude: 23.7250,
+  latitude: 42.7595,
+  longitude: 23.4286,
   description: "Street light on Main Street is not working",
   reporterName: "Ivan", // optional
   contactInfo: "ivan@email.com" // optional
@@ -526,7 +526,7 @@ Body: {
   success: true,
   data: {
     id: "uuid",
-    location: { latitude: 42.7050, longitude: 23.7250 },
+    location: { latitude: 42.7595, longitude: 23.4286 },
     description: "...",
     status: "pending",
     createdAt: "2026-01-23T10:00:00Z",
@@ -581,7 +581,7 @@ Body: {
 ## 🎨 UI/UX Considerations
 
 ### Map Interface
-- **Center**: Chepintsi village center (42.7050, 23.7250)
+- **Center**: Chepintsi village center (42.7595°N, 23.4286°E)
 - **Zoom**: 15 (street level)
 - **Markers**: 
   - 🔴 Red for pending reports

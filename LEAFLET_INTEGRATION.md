@@ -19,9 +19,10 @@ src/components/MapView/
 
 #### Default Coordinates
 - **Village**: Chepintsi 1554, Bulgaria
-- **Latitude**: 42.7050
-- **Longitude**: 23.7250
+- **Latitude**: 42.7595°N (42° 45′ 28″ N)
+- **Longitude**: 23.4286°E (23° 25′ 32″ E)
 - **Default Zoom**: 15 (street level)
+- **Source**: [Wikipedia - Chepintsi, Sofia City Province](https://en.wikipedia.org/wiki/Chepintsi,_Sofia_City_Province)
 
 #### Tile Layer
 - **Provider**: OpenStreetMap
@@ -65,17 +66,18 @@ The Map page (`src/pages/Map/Map.jsx`) includes:
 
 ### Chepintsi Village
 ```javascript
-const CHEPINTSI_CENTER = [42.7050, 23.7250]
+// Accurate coordinates from Wikipedia
+const CHEPINTSI_CENTER = [42.7595, 23.4286]
 ```
 
 ### Geographic Bounds (from ARCHITECTURE.md)
 ```javascript
 // Validation bounds for Chepintsi area
 const CHEPINTSI_BOUNDS = {
-  minLat: 42.68,
-  maxLat: 42.73,
-  minLng: 23.68,
-  maxLng: 23.75
+  minLat: 42.73,
+  maxLat: 42.79,
+  minLng: 23.38,
+  maxLng: 23.48
 }
 ```
 
