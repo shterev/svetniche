@@ -1,0 +1,318 @@
+# Testing Guidelines
+
+**IMPORTANT: These rules apply when writing tests, organizing test files, and ensuring code quality through testing.**
+
+## Auto-Apply Scope
+- Applies to all test files (*.test.ts, *.test.tsx, *.spec.ts, *.spec.tsx)
+- Automatically enforced when creating or modifying tests
+- Reference these rules before implementing any test files
+
+## Test File Organization
+
+### Test Directory Structure
+- **CRITICAL: Always create test files in a `__tests__` folder within the same directory as the file being tested**
+- **Test file naming**: Use the same name as the file being tested with `.test.ts` or `.test.tsx` extension
+- Keep tests close to the source code for better maintainability
+
+### Directory Structure Pattern
+```
+src/
+  hooks/
+    useGeolocation/
+      __tests__/
+        useGeolocation.test.ts
+      useGeolocation.ts
+      index.ts
+  components/
+    Dashboard/
+      __tests__/
+        Dashboard.test.tsx
+      Dashboard.tsx
+      index.ts
+  utils/
+    formatPrice/
+      __tests__/
+        formatPrice.test.ts
+      formatPrice.ts
+      index.ts
+```
+
+### Examples
+```typescript
+// ✅ CORRECT: Test file in __tests__ folder
+src/hooks/useGeolocation/__tests__/useGeolocation.test.ts
+
+// ❌ WRONG: Test file in separate tests directory
+src/__tests__/hooks/useGeolocation.test.ts
+
+// ❌ WRONG: Test file next to source without __tests__ folder
+src/hooks/useGeolocation/useGeolocation.test.ts
+```
+
+## Testing Framework & Tools
+
+### Testing Libraries
+- **Use Vitest** as the test runner
+- **Use @testing-library/react** for component testing
+- **Use @testing-library/react-hooks** (or renderHook from @testing-library/react) for hook testing
+- **Never use Jest** - This project uses Vitest
+
+### Import Pattern
+```typescript
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { renderHook, waitFor } from "@testing-library/react";
+```
+
+## Test Structure & Best Practices
+
+### Test Organization
+- **Use `describe` blocks** to group related tests
+- **Use clear, descriptive test names** that explain what is being tested
+- **Follow AAA pattern**: Arrange, Act, Assert
+- **One assertion concept per test** - Tests should focus on a single behavior
+
+### Test Naming Convention
+```typescript
+// ✅ GOOD: Clear, descriptive test names
+it("should return initial loading state")
+it("should successfully get user coordinates")
+it("should handle geolocation error and return default coordinates")
+
+// ❌ BAD: Vague or unclear test names
+it("works")
+it("test 1")
+it("geolocation")
+```
+
+### Mock Setup
+- **Use `beforeEach`** for common setup code
+- **Clean up mocks** between tests
+- **Mock external dependencies** (navigator, fetch, etc.)
+- **Use `vi.fn()`** for creating mock functions
+
+### Example Mock Pattern
+```typescript
+describe("useGeolocation", () => {
+  let mockGeolocation: {
+    getCurrentPosition: ReturnType<typeof vi.fn>;
+  };
+
+  beforeEach(() => {
+    mockGeolocation = {
+      getCurrentPosition: vi.fn(),
+    };
+
+    Object.defineProperty(globalThis.navigator, "geolocation", {
+      writable: true,
+      value: mockGeolocation,
+      configurable: true,
+    });
+  });
+
+  // ... tests
+});
+```
+
+## Test Coverage Requirements
+
+### What to Test
+- **Happy path**: Normal, expected behavior
+- **Error cases**: All error scenarios
+- **Edge cases**: Boundary conditions, special values (0, null, undefined, empty strings)
+- **State changes**: All state transitions
+- **User interactions**: Click events, form submissions, etc.
+- **API calls**: Success and failure scenarios
+- **Loading states**: Initial, loading, success, error states
+
+### Hook Testing
+- **Test initial state** - Verify correct initialization
+- **Test state updates** - Verify state changes correctly
+- **Test side effects** - Verify useEffect behavior
+- **Test cleanup** - Verify cleanup functions are called
+- **Test re-renders** - Ensure hooks don't cause unnecessary re-renders
+- **Test error handling** - Verify errors are handled correctly
+
+### Component Testing
+- **Test rendering** - Component renders without crashing
+- **Test props** - Component responds to prop changes
+- **Test user interactions** - Buttons, forms, inputs work correctly
+- **Test conditional rendering** - Different states render correctly
+- **Test accessibility** - ARIA labels, keyboard navigation
+
+## Async Testing
+
+### Use waitFor for Async Updates
+```typescript
+// ✅ CORRECT: Use waitFor for async state updates
+await waitFor(() => {
+  expect(result.current.loading).toBe(false);
+});
+
+// ❌ WRONG: Don't check async state synchronously
+expect(result.current.loading).toBe(false); // May fail
+```
+
+### Async/Await Pattern
+- **Always use async/await** for asynchronous tests
+- **Use waitFor** from @testing-library/react for state updates
+- **Don't use arbitrary timeouts** - Let waitFor handle timing
+
+## Mock Best Practices
+
+### Navigator Mocking
+```typescript
+// ✅ CORRECT: Properly mock navigator APIs
+Object.defineProperty(globalThis.navigator, "geolocation", {
+  writable: true,
+  value: mockGeolocation,
+  configurable: true,
+});
+
+// ❌ WRONG: Direct assignment may not work
+navigator.geolocation = mockGeolocation;
+```
+
+### Function Mocking
+```typescript
+// ✅ CORRECT: Use vi.fn() with implementation
+mockGeolocation.getCurrentPosition.mockImplementation(
+  (success: PositionCallback) => {
+    success(mockPosition);
+  }
+);
+
+// ❌ WRONG: Don't use actual implementations in tests
+// (unless integration testing)
+```
+
+## Test Maintenance
+
+### Keep Tests Updated
+- **Update tests when implementation changes**
+- **Remove obsolete tests** when features are removed
+- **Refactor tests** to match code refactoring
+- **Add tests for bug fixes** to prevent regression
+
+### Test Code Quality
+- **Follow same code quality rules** as production code
+- **No code duplication** - Extract common test utilities
+- **Use TypeScript** - Properly type test data
+- **Clean, readable tests** - Tests are documentation
+
+## Running Tests
+
+### Commands
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run tests with coverage
+npm run test:coverage
+
+# Run specific test file
+npm test useGeolocation
+```
+
+## Common Patterns
+
+### Testing Custom Hooks
+```typescript
+import { renderHook, waitFor } from "@testing-library/react";
+import { describe, it, expect } from "vitest";
+
+describe("useCustomHook", () => {
+  it("should return expected value", () => {
+    const { result } = renderHook(() => useCustomHook());
+    expect(result.current.value).toBe(expectedValue);
+  });
+});
+```
+
+### Testing Components
+```typescript
+import { render, screen, fireEvent } from "@testing-library/react";
+import { describe, it, expect } from "vitest";
+
+describe("MyComponent", () => {
+  it("should render correctly", () => {
+    render(<MyComponent />);
+    expect(screen.getByText("Hello")).toBeInTheDocument();
+  });
+
+  it("should handle click events", () => {
+    const handleClick = vi.fn();
+    render(<MyComponent onClick={handleClick} />);
+    fireEvent.click(screen.getByRole("button"));
+    expect(handleClick).toHaveBeenCalledTimes(1);
+  });
+});
+```
+
+### Testing Error Boundaries
+```typescript
+it("should handle errors gracefully", () => {
+  const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+
+  expect(() => render(<ComponentThatThrows />)).toThrow();
+
+  consoleError.mockRestore();
+});
+```
+
+## Test Data Management
+
+### Use Constants for Test Data
+```typescript
+// ✅ CORRECT: Define test data as constants
+const DEFAULT_COORDINATES = {
+  lat: 42.50606,
+  lon: 27.46781,
+};
+
+const MOCK_POSITION: GeolocationPosition = {
+  coords: {
+    latitude: 40.7128,
+    longitude: -74.006,
+    accuracy: 100,
+    altitude: null,
+    altitudeAccuracy: null,
+    heading: null,
+    speed: null,
+    toJSON: () => ({}),
+  },
+  timestamp: Date.now(),
+  toJSON: () => ({}),
+};
+```
+
+### Factory Functions for Complex Data
+```typescript
+// For complex test data, use factory functions
+function createMockUser(overrides = {}) {
+  return {
+    id: "123",
+    name: "Test User",
+    email: "test@example.com",
+    ...overrides,
+  };
+}
+```
+
+## Continuous Integration
+
+### CI Test Requirements
+- **All tests must pass** before merging
+- **Maintain high test coverage** (aim for >80%)
+- **No flaky tests** - Tests should be deterministic
+- **Fast test execution** - Optimize slow tests
+
+## Benefits of Good Testing
+
+- **Confidence in refactoring** - Tests catch breaking changes
+- **Documentation** - Tests show how code should be used
+- **Bug prevention** - Tests catch bugs before production
+- **Better design** - Testable code is often better code
+- **Faster debugging** - Tests help isolate issues quickly

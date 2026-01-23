@@ -1,0 +1,74 @@
+# Error Handling & Async Operations
+
+**IMPORTANT: These rules apply to error handling and asynchronous operations.**
+
+## Auto-Apply Scope
+- Applies to all TypeScript and JavaScript files
+- Automatically enforced when handling errors or async operations
+- Critical for maintaining consistent error handling patterns
+
+## Error Handling Pattern
+
+**CRITICAL: Instead of try-catch, use the `to` function from @mrspartak/promises**
+
+### Required Pattern:
+```typescript
+import { to } from '@mrspartak/promises';
+
+const [error, result] = await to(someAsyncOperation());
+if (error) {
+  console.error('Error description:', error);
+  // handle error appropriately
+}
+```
+
+### Why This Pattern:
+- Cleaner code structure
+- Explicit error handling
+- Better error flow visibility
+- Consistent across the codebase
+
+## Async Operations Best Practices
+- **Always use async/await** instead of .then() and .catch()
+- **Write clean, readable asynchronous code**
+- **Handle promises consistently** across the codebase
+
+## Error Handling Examples
+
+### ✅ Correct:
+```typescript
+import { to } from '@mrspartak/promises';
+
+const fetchData = async () => {
+  const [error, data] = await to(fetch('/api/data'));
+  if (error) {
+    console.error('Failed to fetch data:', error);
+    return null;
+  }
+  return data;
+};
+```
+
+### ❌ Wrong:
+```typescript
+// Don't use try-catch
+const fetchData = async () => {
+  try {
+    const data = await fetch('/api/data');
+    return data;
+  } catch (error) {
+    console.error('Failed to fetch data:', error);
+    return null;
+  }
+};
+```
+
+## Library Preferences for Error-Prone Operations
+- **Use `react-use`** instead of native JS methods when possible
+- **Use `lodash`** when possible for utility functions
+- **Prefer established, well-maintained libraries** over custom implementations
+
+## Environment & Configuration Safety
+- **Never overwrite .env file** without first asking and confirming
+- **Handle environment-specific configurations** properly
+- **Respect existing environment setups**

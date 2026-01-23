@@ -1,0 +1,77 @@
+# Hook Structure
+
+**IMPORTANT: These rules apply when creating or organizing React hooks.**
+
+## Auto-Apply Scope
+- Applies to all custom React hooks in the project
+- Automatically enforced when creating new hooks
+- Ensures consistent organization and maintainability
+
+## Hook Folder Structure
+
+### One Hook Per Folder Pattern
+- **Each hook MUST be in its own folder** - Follow the same pattern as components and utils
+- **Folder name matches hook name** - Use the exact hook name for the folder (e.g., `useGeolocation`)
+- **Hook file inside folder** - Place the hook implementation file inside its folder
+- **Include index.ts** - Export the hook from an index.ts file
+
+### Example Structure
+
+```
+src/hooks/
+  useGeolocation/
+    - useGeolocation.ts
+    - index.ts
+  useWeatherForecast/
+    - useWeatherForecast.ts
+    - index.ts
+```
+
+### File Contents
+
+**Hook file (useGeolocation.ts):**
+```typescript
+// Hook implementation with all types and logic
+export function useGeolocation() {
+  // ... implementation
+}
+```
+
+**Index file (index.ts):**
+```typescript
+export { useGeolocation } from "./useGeolocation";
+```
+
+## Hook Naming Convention
+- **Hook names start with "use"** - Follow React hooks naming convention
+- **Use camelCase** - e.g., `useGeolocation`, `useWeatherForecast`
+- **Descriptive names** - Hook name should clearly describe its purpose
+
+## Import Pattern
+```typescript
+// ✅ CORRECT: Import from hook folder
+import { useGeolocation } from "../../hooks/useGeolocation";
+import { useWeatherForecast } from "../../hooks/useWeatherForecast";
+
+// ❌ WRONG: Don't import directly from file
+import { useGeolocation } from "../../hooks/useGeolocation/useGeolocation";
+```
+
+## Benefits
+- **Consistent with components and utils** - Same folder pattern across the codebase
+- **Easy to locate** - Each hook is in its own dedicated folder
+- **Scalable** - Easy to add hook-specific tests, types, or utilities in the future
+- **Clean imports** - Index files provide clean import paths
+- **Better organization** - Hooks can grow with related files without cluttering
+
+## When Creating New Hooks
+1. Create a new folder in `src/hooks/` with the hook name
+2. Create the hook file inside the folder (e.g., `useCustomHook.ts`)
+3. Create an `index.ts` file that exports the hook
+4. Implement the hook logic in the hook file
+5. Import the hook using the folder path
+
+## Related Patterns
+- See `component-architecture.mdc` for component folder structure
+- See `single-responsibility.mdc` for utility folder structure
+- Follow the same principles: one folder per unit of functionality

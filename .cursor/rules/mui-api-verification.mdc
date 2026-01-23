@@ -1,0 +1,138 @@
+# MUI API Verification Rules
+
+**IMPORTANT: These rules apply when working with Material-UI (MUI) components.**
+
+## Auto-Apply Scope
+- Applies when using any MUI components from @mui/material or @mui/lab
+- Automatically enforced before implementing MUI features
+- Reference these rules when encountering MUI-related errors
+
+## Always Verify Current API
+
+### CRITICAL: Use MUI MCP Before Implementation
+- **ALWAYS use MUI MCP server to verify component APIs** before using any MUI component
+- **NEVER assume component props or APIs** based on old documentation or memory
+- **ALWAYS check official documentation** via MUI MCP for the latest API
+- MUI APIs change between versions - what worked in v4 may not work in v5+
+
+### When to Use MUI MCP (Mandatory):
+1. Before using any MUI component for the first time
+2. When encountering TypeScript errors with MUI components
+3. When unsure about prop names or types
+4. Before implementing MUI features (theming, styling, etc.)
+5. When migrating or updating MUI-related code
+
+## Common API Changes to Watch For
+
+### Grid Component
+- ❌ **OUTDATED API**: `<Grid container>` and `<Grid item>` (MUI v4/early v5)
+- ✅ **CURRENT API**: Use `<Stack>` instead (preferred per project rules)
+- If Grid is absolutely necessary, verify the current Grid2 API via MUI MCP
+
+### Example of Outdated vs Current:
+```tsx
+// ❌ WRONG: Old Grid API (will cause TypeScript errors)
+<Grid container spacing={2}>
+  <Grid item xs={12} sm={6}>
+    <Card />
+  </Grid>
+</Grid>
+
+// ✅ CORRECT: Use Stack (preferred)
+<Stack direction="row" flexWrap="wrap" gap={2}>
+  <Box sx={{ width: { xs: '100%', sm: '50%' } }}>
+    <Card />
+  </Box>
+</Stack>
+```
+
+### LoadingButton
+- ❌ **OUTDATED**: `LoadingButton` from @mui/lab with separate loading state
+- ✅ **CURRENT**: Regular `Button` component has `loading` prop built-in
+
+## Verification Workflow
+
+1. **Before using a component:**
+   - Call MUI MCP to get component documentation
+   - Review available props and their types
+   - Check for any deprecated features
+
+2. **When encountering errors:**
+   - Don't guess or assume the fix
+   - Use MUI MCP to verify the correct API
+   - Check if the component/prop still exists in current version
+
+3. **When implementing features:**
+   - Verify theming APIs via MUI MCP
+   - Check styling approaches (sx prop, styled API, etc.)
+   - Confirm event handler prop names
+
+## Project-Specific MUI Preferences
+
+Per existing project rules:
+- **Stack over Grid**: Always prefer Stack for layouts
+- **Stack over Box**: Use Stack instead of Box when possible, especially for flex layouts
+- **Verify all props**: Always check component props via MUI MCP before use
+
+### CRITICAL: Box with display="flex" Anti-Pattern
+
+**NEVER use `<Box display="flex">` - Always use `<Stack>` instead**
+
+#### Anti-Pattern to Avoid:
+```tsx
+// ❌ WRONG: Box with display="flex"
+<Box display="flex" justifyContent="center" alignItems="center" gap={2}>
+  <Component1 />
+  <Component2 />
+</Box>
+
+<Box display="flex" flexDirection="column" gap={1}>
+  <Item />
+</Box>
+```
+
+#### Correct Pattern:
+```tsx
+// ✅ CORRECT: Use Stack component
+<Stack justifyContent="center" alignItems="center" gap={2}>
+  <Component1 />
+  <Component2 />
+</Stack>
+
+<Stack direction="column" gap={1}>
+  <Item />
+</Stack>
+```
+
+#### Why Stack is Better:
+- **Semantic**: Stack is designed for flex layouts
+- **Cleaner**: No need for `display="flex"` prop
+- **Consistent**: Follows MUI best practices
+- **Performance**: Optimized for flex layouts
+- **Default direction**: Stack defaults to column, use `direction="row"` for horizontal
+
+#### Common Box → Stack Migrations:
+- `display="flex"` → remove (Stack is flex by default)
+- `flexDirection="row"` → `direction="row"`
+- `flexDirection="column"` → `direction="column"` (or omit, it's the default)
+- `justifyContent`, `alignItems`, `gap` → same props work on Stack
+
+## Benefits of This Approach
+
+- **Prevents TypeScript errors** from outdated APIs
+- **Ensures compatibility** with current MUI version
+- **Saves debugging time** by using correct API from the start
+- **Follows best practices** from official documentation
+- **Zero assumptions** - always verify with source of truth
+
+## Error Prevention Checklist
+
+Before using any MUI component, ask yourself:
+- [ ] Have I verified this component's API via MUI MCP?
+- [ ] Am I sure these props exist in the current version?
+- [ ] Is there a preferred alternative per project rules (e.g., Stack vs Grid)?
+- [ ] Have I checked the official documentation for this feature?
+
+## Remember
+
+**"When in doubt, check MUI MCP"** - Never assume, always verify!

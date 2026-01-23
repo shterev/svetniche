@@ -1,0 +1,68 @@
+# Code Quality & Best Practices
+
+**IMPORTANT: These rules apply to code quality, organization, and development standards.**
+
+## Auto-Apply Scope
+- Applies to all TypeScript and JavaScript files
+- Automatically enforced during code development
+- Reference these rules before making any significant code changes
+
+## Code Simplicity & Reuse
+- **Always look for existing code to iterate on** instead of creating new code
+- **Do not drastically change patterns** before trying to iterate on existing patterns
+- **Always prefer simple solutions** - Keep It Simple, Stupid (KISS)
+- **Avoid duplication of code whenever possible** - Check for similar functionality
+
+## Code Syntax & Style
+- **Always use short syntax when possible** - Prefer concise arrow function syntax
+  - ❌ BAD: `(arg) => { return value; }`
+  - ✅ GOOD: `(arg) => value`
+- **Remove unnecessary braces** and return statements in arrow functions
+- **Keep code concise and readable**
+- **Always clean up unused imports**
+- **Always clean up unused code** - Remove dead code regularly
+
+## TypeScript Best Practices
+- **Never use `any` as TypeScript type** - Always use proper typing
+- **Use strict TypeScript configuration** for better code quality
+- **Leverage TypeScript's type system** for better development experience
+
+## Architecture & Patterns
+- **Do not introduce new patterns or technology** without exhausting existing options
+- **Remove old implementation** when introducing new patterns to avoid duplicate logic
+- **Avoid making major changes to proven patterns** unless explicitly instructed
+- **Follow SOLID principles** in code design
+
+## File Organization
+- **Avoid files over 200-300 lines of code** - Refactor at that point
+- **Don't create index files** to export files in the same folder
+- **Keep the codebase very clean and organized**
+- **Maintain logical file structure** and naming conventions
+
+## Environment Considerations
+- **Write code for different environments**: dev, test, and prod
+- **Never add stubbing or fake data patterns** to code affecting dev or prod
+- **Mocking data is only needed for tests** - Never mock data for dev or prod
+
+## Testing Requirements
+- **Write thorough tests** for all major functionality
+- **Ensure test coverage** for critical business logic
+- **Use appropriate testing strategies** for different code types
+
+## Change Management
+- **Focus on areas relevant to the task**
+- **Do not touch code unrelated to the task**
+- **Always think about what other methods/areas might be affected** by changes
+- **Be careful to only make requested changes** or well-understood related changes
+
+## Script Guidelines
+- **Avoid writing scripts in files if possible** - especially one-time scripts
+- **Consider dedicated script directories** for utility scripts
+- **Document script purposes and usage** when necessary
+
+## Comment Guidelines
+- **Add comments only when complex logic is applied**
+- **Write self-documenting code** when possible
+- **Use comments to explain "why" not "what"**
+- **Keep comments concise and relevant**
+- **Update comments when code changes**

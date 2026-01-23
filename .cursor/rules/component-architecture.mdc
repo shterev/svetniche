@@ -1,0 +1,193 @@
+# Component Architecture Rules
+
+**IMPORTANT: These rules apply to React component structure and organization.**
+
+## Auto-Apply Scope
+- Applies to all React component files (*.tsx, *.jsx)
+- Automatically enforced when creating or organizing components
+- Reference these rules before creating any new component
+
+## Component Structure
+ALL React components MUST follow this folder-based structure:
+
+```
+ComponentName/
+├── index.ts              # Barrel export (required)
+└── ComponentName.tsx     # Component implementation (required)
+```
+
+## Location Rules
+
+### Top-Level Components
+**CRITICAL**: All top-level components live directly in `src/components/` with their own folder.
+
+```
+src/components/
+├── ComponentName/
+│   ├── index.ts
+│   └── ComponentName.tsx
+├── AnotherComponent/
+│   ├── index.ts
+│   └── AnotherComponent.tsx
+```
+
+### Sub-Components (Exception)
+**When a component is ONLY used by a parent component**, create it as a sub-component:
+
+```
+src/components/
+├── Dashboard/
+│   ├── index.ts
+│   ├── Dashboard.tsx
+│   └── components/              # Sub-components folder
+│       └── Header/
+│           ├── index.ts
+│           └── Header.tsx
+```
+
+**IMPORTANT**: Sub-components follow the SAME structure rules as top-level components.
+
+## index.ts Template
+```typescript
+export { default } from './ComponentName';
+export { default as ComponentName } from './ComponentName';
+```
+
+## Component Template
+```typescript
+const ComponentName = () => {
+  return <div>Component Content</div>;
+};
+
+export default ComponentName;
+```
+
+## Mandatory Rules
+
+### For All Components (Top-Level and Sub-Components)
+1. ✅ ALWAYS create a folder for EVERY component (PascalCase)
+2. ✅ ALWAYS include index.ts with barrel exports
+3. ✅ Use TypeScript with proper typing
+4. ✅ Import only needed MUI components
+5. ✅ Follow consistent export pattern
+6. ❌ NEVER place .tsx files directly in any components/ folder
+
+### For Top-Level Components
+7. ✅ ALWAYS place top-level component folders directly in `src/components/`
+8. ❌ NEVER nest component folders directly inside other component folders
+
+### For Sub-Components
+9. ✅ Create `components/` folder inside parent component folder
+10. ✅ Place sub-component folders inside parent's `components/` folder
+11. ✅ Only create sub-components if used EXCLUSIVELY by the parent
+12. ❌ If a component is reusable, it should be a top-level component
+
+## Examples
+
+### ✅ Correct Top-Level Components:
+```
+src/components/
+├── Dashboard/
+│   ├── index.ts
+│   └── Dashboard.tsx
+├── DailyForecastCards/
+│   ├── index.ts
+│   └── DailyForecastCards.tsx
+```
+
+### ✅ Correct Sub-Component Structure:
+```
+src/components/
+├── Dashboard/
+│   ├── index.ts
+│   ├── Dashboard.tsx
+│   └── components/           # Sub-components folder
+│       ├── Header/
+│       │   ├── index.ts
+│       │   └── Header.tsx
+│       └── Footer/
+│           ├── index.ts
+│           └── Footer.tsx
+```
+
+### ✅ Correct Nested Sub-Components:
+```
+src/components/
+├── Dashboard/
+│   ├── index.ts
+│   ├── Dashboard.tsx
+│   └── components/
+│       └── Header/
+│           ├── index.ts
+│           ├── Header.tsx
+│           └── components/    # Sub-components can have sub-components
+│               └── Logo/
+│                   ├── index.ts
+│                   └── Logo.tsx
+```
+
+### ❌ Wrong - Component without folder:
+```
+src/components/
+├── Dashboard.tsx  ❌
+```
+
+### ❌ Wrong - Direct nesting (missing components/ folder):
+```
+src/components/
+├── Dashboard/
+│   ├── index.ts
+│   ├── Dashboard.tsx
+│   └── Header/  ❌ Should be in components/Header/
+│       ├── index.ts
+│       └── Header.tsx
+```
+
+### ❌ Wrong - Sub-component file directly in parent:
+```
+src/components/
+├── Dashboard/
+│   ├── index.ts
+│   ├── Dashboard.tsx
+│   └── Header.tsx  ❌ Should be in components/Header/Header.tsx
+```
+
+## Import Examples
+
+### Importing Top-Level Component:
+```typescript
+// In Dashboard.tsx
+import DailyForecastCards from '../DailyForecastCards';
+```
+
+### Importing Sub-Component:
+```typescript
+// In Dashboard.tsx
+import Header from './components/Header';
+import Footer from './components/Footer';
+```
+
+### Importing Nested Sub-Component:
+```typescript
+// In Dashboard/components/Header/Header.tsx
+import Logo from './components/Logo';
+```
+
+## Decision Guide: Top-Level vs Sub-Component
+
+### Create as Top-Level Component when:
+- ✅ Component is reusable across multiple parent components
+- ✅ Component has significant complexity (100+ lines)
+- ✅ Component may be reused in the future
+- ✅ Component represents a standalone feature
+
+### Create as Sub-Component when:
+- ✅ Component is ONLY used by one parent component
+- ✅ Component is tightly coupled to parent's logic
+- ✅ Component won't be reused elsewhere
+- ✅ Keeping it close to parent improves code organization
+
+**When in doubt, start as a sub-component. If reuse is needed later, refactor to top-level.**
+
+## Additional Documentation
+See `.cursor/component-architecture.md` for detailed documentation.

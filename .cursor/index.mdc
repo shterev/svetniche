@@ -1,0 +1,143 @@
+# Weather UI - Development Rules
+
+This document combines all development rules for the Weather UI project.
+
+## Rule Categories
+
+All rules are organized by concern in the `.cursor/rules/` directory:
+
+### 1. Component Architecture
+**File**: `rules/component-architecture.mdc`
+- Component folder structure (top-level and sub-components)
+- Component location rules
+- Sub-component organization in `components/` folder
+- Import/export patterns
+- Naming conventions
+- Decision guide for top-level vs sub-component
+
+### 2. Code Quality & Best Practices
+**File**: `rules/code-quality.mdc`
+- Code simplicity and reuse
+- TypeScript best practices
+- File organization
+- Testing requirements
+- Change management
+
+### 3. Error Handling & Async Operations
+**File**: `rules/error-handling.mdc`
+- Error handling patterns (using `to` from @mrspartak/promises)
+- Async/await best practices
+- Library preferences
+
+### 4. MUI API Verification
+**File**: `rules/mui-api-verification.mdc`
+- MUI component API verification
+- Using MUI MCP for documentation
+- Common API changes and pitfalls
+- Stack vs Grid preferences
+- Box with display="flex" anti-pattern (always use Stack instead)
+
+### 5. Single Responsibility Principle
+**File**: `rules/single-responsibility.mdc`
+- One file, one responsibility guideline
+- **Utility folder structure** - Each utility in its own folder with index.ts
+- **camelCase naming** for utility folders and files (not PascalCase)
+- Separation of types, utilities, and logic
+- Two-level index files (utility-level and root-level)
+- Clean import/export patterns
+- Migration strategy for splitting files
+
+### 6. Hook Structure
+**File**: `rules/hook-structure.mdc`
+- **Hook folder structure** - One folder per hook with index.ts
+- Hook naming conventions (use camelCase, start with "use")
+- Import/export patterns for hooks
+- Consistent organization with components and utils
+
+### 7. Testing Guidelines
+**File**: `rules/testing.mdc`
+- **Test directory structure** - Always use `__tests__` folder in same directory as source
+- **Test file naming** - Match source file name with `.test.ts` or `.test.tsx` extension
+- Testing framework (Vitest) and tools (@testing-library)
+- Test organization and structure (describe, it, beforeEach)
+- Mock patterns and best practices
+- Async testing with waitFor
+- Hook testing with renderHook
+- Component testing patterns
+- Test coverage requirements
+- Test data management
+
+---
+
+## Quick Reference
+
+### Component Creation Checklist
+
+#### For Top-Level Components:
+- [ ] Create folder in `src/components/` with PascalCase name
+- [ ] Create `index.ts` with barrel exports
+- [ ] Create `ComponentName.tsx` with component implementation
+- [ ] Use TypeScript with proper typing
+
+#### For Sub-Components:
+- [ ] Create `components/` folder inside parent component
+- [ ] Create sub-component folder with PascalCase name
+- [ ] Create `index.ts` with barrel exports
+- [ ] Create `ComponentName.tsx` with component implementation
+- [ ] Ensure sub-component is only used by parent (not reusable)
+
+### Before Using MUI Components
+- [ ] Verify component API via MUI MCP
+- [ ] Check if props exist in current version
+- [ ] Prefer Stack over Grid for layouts
+- [ ] Use Stack over Box when possible
+- [ ] NEVER use `<Box display="flex">` - always use `<Stack>` instead
+
+### Error Handling
+- [ ] Use `to` function from @mrspartak/promises
+- [ ] Never use try-catch blocks
+- [ ] Always use async/await (not .then/.catch)
+
+### Code Quality
+- [ ] Keep code simple and DRY
+- [ ] Use short arrow function syntax
+- [ ] Never use `any` type
+- [ ] Clean up unused imports/code
+- [ ] Keep files under 200-300 lines
+
+### File Organization
+- [ ] One file, one responsibility
+- [ ] Separate types into dedicated files
+- [ ] Each utility in its own camelCase folder (e.g., `utils/formatDate/`)
+- [ ] Each utility folder has `index.ts` and implementation file
+- [ ] Create two-level index files (utility-level and root utils index)
+- [ ] Use descriptive, purpose-driven file names
+
+### Hook Organization
+- [ ] Each hook in its own folder (e.g., `hooks/useGeolocation/`)
+- [ ] Hook folder has `index.ts` and implementation file
+- [ ] Use camelCase for hook folder names
+- [ ] Hook names start with "use" prefix
+
+### Testing
+- [ ] Create `__tests__` folder in same directory as source file
+- [ ] Name test file to match source file (e.g., `useGeolocation.test.ts`)
+- [ ] Use Vitest and @testing-library for testing
+- [ ] Test happy path, error cases, and edge cases
+- [ ] Use describe blocks to group related tests
+- [ ] Use clear, descriptive test names
+- [ ] Mock external dependencies properly
+- [ ] Use async/await with waitFor for async tests
+- [ ] Verify initial state, state updates, and side effects
+- [ ] Ensure tests are deterministic (no flaky tests)
+
+---
+
+## Rule Enforcement
+
+All rules in the `rules/` directory are automatically applied based on:
+- File type (*.tsx, *.jsx, *.ts, *.js)
+- Context (component creation, MUI usage, error handling)
+- Development phase (implementation, refactoring, testing)
+
+Refer to individual rule files for detailed guidelines and examples.

@@ -1,0 +1,52 @@
+# Weather UI Development Rules
+
+All project rules are organized in separate files by concern.
+
+**See `.cursor/index.mdc` for the complete rule index and reference.**
+
+## Rule Structure
+
+Rules are split into separate files in `.cursor/rules/`:
+
+1. **Component Architecture** (`rules/component-architecture.mdc`)
+   - Component folder structure and organization
+   - Top-level and sub-component patterns
+   - Import/export patterns
+
+2. **Code Quality** (`rules/code-quality.mdc`)
+   - Code simplicity, reuse, and best practices
+   - TypeScript guidelines
+   - File organization
+
+3. **Error Handling** (`rules/error-handling.mdc`)
+   - Error handling patterns with `to` function
+   - Async/await best practices
+
+4. **MUI API Verification** (`rules/mui-api-verification.mdc`)
+   - MUI component API verification
+   - Using MUI MCP for documentation
+   - Current API best practices
+
+5. **Single Responsibility** (`rules/single-responsibility.mdc`)
+   - One file, one responsibility principle
+   - Utility folder structure (folder per utility with index.ts)
+   - camelCase naming for utility folders and files
+   - Separation of types, utilities, and logic
+   - Clean import/export patterns
+
+6. **Hook Structure** (`rules/hook-structure.mdc`)
+   - Hook folder structure (one folder per hook)
+   - Hook naming conventions
+   - Import/export patterns for hooks
+
+7. **Testing** (`rules/testing.mdc`)
+   - Test file organization and structure
+   - Test directory structure (\_\_tests\_\_ folder pattern)
+   - Testing framework and tools (Vitest, @testing-library)
+   - Test coverage requirements and best practices
+   - Mock patterns and async testing
+   - Hook and component testing guidelines
+
+---
+
+**For detailed rules, see individual files in `.cursor/rules/` or the combined index at `.cursor/index.mdc`**

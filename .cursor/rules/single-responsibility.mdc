@@ -1,0 +1,301 @@
+# Single Responsibility Principle
+
+**IMPORTANT: These rules apply when creating or organizing utility files, modules, and code structure.**
+
+## Auto-Apply Scope
+- Applies to all TypeScript and JavaScript files
+- Automatically enforced when creating new utility functions or modules
+- Critical for maintaining code organization and testability
+
+## Core Principle
+**One File, One Responsibility** - Each file should have a single, well-defined purpose.
+
+## Guidelines
+
+### File Organization
+- **Keep files focused** - Each file should do one thing and do it well
+- **Split by responsibility** - When a file has multiple responsibilities, split it into separate files
+- **Clear naming** - File names should clearly indicate their single purpose
+- **Logical grouping** - Group related files in appropriate directories
+
+### When to Split Files
+
+Split a file when it contains:
+- Multiple unrelated functions or classes
+- Different types of operations (e.g., data transformation + formatting + API calls)
+- More than one clear responsibility or concern
+- Code that serves different purposes in the application
+
+### Example: Good File Structure
+
+```
+src/
+├── types/
+│   └── forecast.types.ts                        # Only type definitions
+├── utils/
+│   ├── formatDate/
+│   │   ├── index.ts                            # Export barrel
+│   │   └── formatDate.ts                       # Date formatting logic
+│   ├── formatTime/
+│   │   ├── index.ts                            # Export barrel
+│   │   └── formatTime.ts                       # Time formatting logic
+│   ├── weatherIcon/
+│   │   ├── index.ts                            # Export barrel
+│   │   └── weatherIcon.ts                      # Icon URL generation
+│   ├── transformForecastToDaily/
+│   │   ├── index.ts                            # Export barrel
+│   │   └── transformForecastToDaily.ts         # Data transformation
+│   └── index.ts                                # Root export point
+```
+
+**Benefits:**
+- Easy to find and understand code
+- Easier to test individual functions
+- Better code reusability
+- Reduced risk of circular dependencies
+- Clearer module boundaries
+- Consistent with component structure
+- Room for growth (tests, types, helpers per utility)
+
+### Example: Bad File Structure
+
+```
+src/
+└── utils/
+    └── forecast-helpers.ts        # Contains types, transformation, formatting, and icon logic
+```
+
+**Problems:**
+- Hard to locate specific functionality
+- Difficult to test in isolation
+- Unclear dependencies
+- Harder to maintain and refactor
+
+## Type Definitions
+- **Always separate types** - Keep TypeScript type definitions in their own files
+- **Location**: Place shared types in `src/types/` directory
+- **Naming**: Use descriptive names ending in `.types.ts`
+- **Export**: Export types that will be used across multiple files
+
+```typescript
+// ✅ CORRECT: Dedicated type file
+// src/types/forecast.types.ts
+export interface ForecastEntry { /* ... */ }
+export interface WeatherApiResponse { /* ... */ }
+export interface DailyForecast { /* ... */ }
+```
+
+```typescript
+// ❌ WRONG: Types mixed with implementation
+// src/utils/forecast-transformer.ts
+export interface ForecastEntry { /* ... */ }
+export function transformForecast() { /* ... */ }
+```
+
+## Utility Functions Structure
+
+### CRITICAL: Folder-Based Utility Organization
+
+**Each utility function MUST have its own folder with an `index.ts` and implementation file.**
+
+This pattern mirrors the component structure but uses **camelCase** naming (not PascalCase).
+
+#### Required Structure Pattern
+
+```
+src/utils/
+├── formatDate/
+│   ├── index.ts              # Barrel export
+│   └── formatDate.ts         # Implementation
+├── formatTime/
+│   ├── index.ts              # Barrel export
+│   └── formatTime.ts         # Implementation
+├── weatherIcon/
+│   ├── index.ts              # Barrel export
+│   └── weatherIcon.ts        # Implementation
+├── transformForecastToDaily/
+│   ├── index.ts              # Barrel export
+│   └── transformForecastToDaily.ts  # Implementation
+└── index.ts                  # Root exports (re-exports from all utils)
+```
+
+#### Naming Conventions
+
+- **Folder names**: camelCase (e.g., `formatDate/`, `weatherIcon/`)
+- **File names**: camelCase matching folder name (e.g., `formatDate.ts`)
+- **Index files**: Always named `index.ts`
+- **Function names**: camelCase, descriptive, verb-based
+
+#### Implementation Example
+
+```typescript
+// ✅ CORRECT: Folder-based utility structure
+// src/utils/formatDate/formatDate.ts
+export function formatDate(dateString: string): string {
+  const date = new Date(dateString + 'T00:00:00');
+  return date.toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'short',
+    day: 'numeric',
+  });
+}
+
+// src/utils/formatDate/index.ts
+export { formatDate } from './formatDate';
+```
+
+```typescript
+// ❌ WRONG: Flat file structure
+// src/utils/date-formatter.ts
+export function formatDate(dateString: string): string { /* ... */ }
+
+// ❌ WRONG: Multiple utilities in one folder
+// src/utils/helpers/helpers.ts
+export function formatDate() { /* ... */ }
+export function formatTime() { /* ... */ }
+```
+
+#### Benefits of Folder-Based Structure
+
+1. **Consistency with components** - Same organizational pattern across codebase
+2. **Scalability** - Easy to add tests, helpers, or related utilities in the same folder
+3. **Clear boundaries** - Each utility is self-contained
+4. **Easy navigation** - IDE folder structure matches import structure
+5. **Future extensibility** - Can add `util.test.ts`, `util.types.ts` in same folder
+
+#### Example: Adding Tests
+
+```
+src/utils/formatDate/
+├── index.ts
+├── formatDate.ts
+└── formatDate.test.ts        # Tests alongside implementation
+```
+
+## Index Files
+
+### Two Levels of Index Files
+
+#### 1. Utility-Level Index Files
+Each utility folder has its own `index.ts` that exports the utility function(s).
+
+```typescript
+// ✅ CORRECT: Utility-level index file
+// src/utils/formatDate/index.ts
+export { formatDate } from './formatDate';
+
+// src/utils/weatherIcon/index.ts
+export { getWeatherIconUrl } from './weatherIcon';
+```
+
+#### 2. Root Utils Index File
+The root `src/utils/index.ts` re-exports all utilities from their folders.
+
+```typescript
+// ✅ CORRECT: Root utils index file
+// src/utils/index.ts
+export { transformForecastToDaily } from './transformForecastToDaily';
+export { formatDate } from './formatDate';
+export { formatTime } from './formatTime';
+export { getWeatherIconUrl } from './weatherIcon';
+```
+
+#### Rules for Index Files
+- **Re-export only** - Index files should only re-export, not contain logic
+- **Barrel exports** - They act as clean export points
+- **No implementation** - Never put function implementations in index files
+
+```typescript
+// ❌ WRONG: Logic in index file
+// src/utils/index.ts
+export function someHelper() { /* ... */ }
+export { otherFunction } from './other';
+
+// ❌ WRONG: Flat file reference (should reference folder)
+// src/utils/index.ts
+export { formatDate } from './formatDate.ts'; // Wrong - references file
+export { formatDate } from './formatDate';    // Correct - references folder
+```
+
+## Import Patterns
+- **Import from index** - When multiple utilities are needed, import from the index file
+- **Direct imports** - For single utilities, can import directly or from index
+- **Type imports** - Always import types from their dedicated type files
+
+```typescript
+// ✅ CORRECT: Import from root utils index
+import type { DailyForecast } from '../../types/forecast.types';
+import { formatDate, formatTime, getWeatherIconUrl } from '../../utils';
+
+// ✅ ALSO CORRECT: Direct import from utility folder
+import { formatDate } from '../../utils/formatDate';
+
+// ✅ ALSO CORRECT: Import from utility file (explicit)
+import { formatDate } from '../../utils/formatDate/formatDate';
+```
+
+```typescript
+// ❌ WRONG: Importing from non-existent flat file
+import { formatDate } from '../../utils/date-formatter';
+
+// ❌ WRONG: Importing from non-existent monolithic file
+import type { DailyForecast } from '../../utils/helpers';
+import { formatDate, fetchData, validateForm } from '../../utils/helpers';
+```
+
+## Benefits of Single Responsibility
+
+1. **Testability**: Easier to write unit tests for focused functions
+2. **Maintainability**: Easier to understand and modify code
+3. **Reusability**: Smaller, focused functions are easier to reuse
+4. **Clarity**: Clear purpose and boundaries for each file
+5. **Debugging**: Easier to locate and fix issues
+6. **Team collaboration**: Reduces merge conflicts and makes code reviews easier
+
+## Migration Strategy
+
+When encountering files with multiple responsibilities or flat utility files:
+
+1. **Identify responsibilities** - List all distinct purposes/functions in the file
+2. **Create folder structure** - For each utility function:
+   - Create a camelCase folder in `src/utils/`
+   - Add `index.ts` with barrel export
+   - Add implementation file with same name as folder
+3. **Move code** - Migrate each function to its own folder
+4. **Update imports** - Fix all import statements across the codebase
+5. **Update root index** - Update `src/utils/index.ts` to re-export from folders
+6. **Delete old files** - Remove the original flat files
+7. **Test thoroughly** - Verify build and functionality
+
+### Example Migration
+
+**Before:**
+```
+src/utils/
+├── date-formatter.ts    # Contains formatDate function
+├── time-formatter.ts    # Contains formatTime function
+└── index.ts
+```
+
+**After:**
+```
+src/utils/
+├── formatDate/
+│   ├── index.ts         # export { formatDate } from './formatDate';
+│   └── formatDate.ts    # Implementation
+├── formatTime/
+│   ├── index.ts         # export { formatTime } from './formatTime';
+│   └── formatTime.ts    # Implementation
+└── index.ts             # Re-exports from all folders
+```
+
+## Red Flags
+
+Watch for these signs that a file needs splitting:
+
+- File is longer than 200 lines
+- File name is generic (e.g., `helpers.ts`, `utils.ts`, `common.ts`)
+- File contains multiple unrelated functions
+- File mixes different concerns (types + logic + formatting + API calls)
+- Difficult to write a clear description of what the file does
+- Importing the file brings in many unused functions
