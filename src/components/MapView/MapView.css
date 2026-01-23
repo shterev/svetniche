@@ -1,0 +1,17 @@
+/* Fix for Leaflet marker icons in bundled React apps */
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+  z-index: 0;
+}
+
+/* Ensure proper z-index for map controls */
+.leaflet-control-container {
+  z-index: 800;
+}
+
+/* Style for the map attribution */
+.leaflet-container .leaflet-control-attribution {
+  background: rgba(255, 255, 255, 0.8);
+  font-size: 11px;
+}
