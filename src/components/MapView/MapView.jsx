@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useImperativeHandle, forwardRef } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet'
-import { Box, Snackbar, Alert, Button } from '@mui/material'
+import { Box, Snackbar, Alert, Button, TextField, CircularProgress } from '@mui/material'
 import L from 'leaflet'
+import { fetchMarkers, createMarker, deleteMarker } from '../../utils/markers'
 import './MapView.css'
 
 // Fix for default marker icon in React-Leaflet
@@ -25,6 +26,28 @@ const CHEPINTSI_CENTER = [42.758914, 23.426287]
 const DEFAULT_ZOOM = 18
 const USER_LOCATION_ZOOM = 18
 
+// Define boundaries for Chepintsi village with comfortable margin
+const CHEPINTSI_BOUNDS = [
+  [42.745, 23.410],  // Southwest corner
+  [42.773, 23.443]   // Northeast corner
+]
+
+// Maximum distance from center in kilometers (1.5km comfortable radius)
+const MAX_DISTANCE_KM = 1.5
+
+// Calculate distance between two coordinates in kilometers
+const calculateDistance = (lat1, lng1, lat2, lng2) => {
+  const R = 6371 // Earth's radius in km
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLng = (lng2 - lng1) * Math.PI / 180
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLng / 2) * Math.sin(dLng / 2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  return R * c
+}
+
 // Component to handle map control and geolocation
 const MapController = ({ userLocation, shouldFlyTo }) => {
   const map = useMap()
@@ -40,104 +63,11 @@ const MapController = ({ userLocation, shouldFlyTo }) => {
   return null
 }
 
-// Component to handle long press events for adding markers
+// Component to handle click/tap events for adding markers
 const MapClickHandler = ({ onMapClick }) => {
-  const pressTimerRef = useRef(null)
-  const pressPositionRef = useRef(null)
-  const map = useMap()
-
-  useEffect(() => {
-    const mapContainer = map.getContainer()
-    
-    const handleTouchStart = (e) => {
-      // Only handle single touch
-      if (e.touches.length !== 1) return
-      
-      const touch = e.touches[0]
-      const point = map.containerPointToLatLng([touch.clientX, touch.clientY])
-      
-      pressPositionRef.current = {
-        latlng: point,
-        screenX: touch.clientX,
-        screenY: touch.clientY
-      }
-      
-      pressTimerRef.current = setTimeout(() => {
-        if (pressPositionRef.current) {
-          onMapClick(pressPositionRef.current.latlng)
-          // Provide haptic feedback if available
-          if (navigator.vibrate) {
-            navigator.vibrate(50)
-          }
-          pressTimerRef.current = null
-          pressPositionRef.current = null
-        }
-      }, 600) // 600ms long press duration
-    }
-    
-    const handleTouchMove = (e) => {
-      if (pressTimerRef.current && pressPositionRef.current) {
-        const touch = e.touches[0]
-        const deltaX = Math.abs(touch.clientX - pressPositionRef.current.screenX)
-        const deltaY = Math.abs(touch.clientY - pressPositionRef.current.screenY)
-        
-        // Cancel if finger moved more than 10 pixels
-        if (deltaX > 10 || deltaY > 10) {
-          clearTimeout(pressTimerRef.current)
-          pressTimerRef.current = null
-          pressPositionRef.current = null
-        }
-      }
-    }
-    
-    const handleTouchEnd = () => {
-      if (pressTimerRef.current) {
-        clearTimeout(pressTimerRef.current)
-        pressTimerRef.current = null
-        pressPositionRef.current = null
-      }
-    }
-    
-    // Add touch event listeners directly to the map container
-    mapContainer.addEventListener('touchstart', handleTouchStart, { passive: true })
-    mapContainer.addEventListener('touchmove', handleTouchMove, { passive: true })
-    mapContainer.addEventListener('touchend', handleTouchEnd, { passive: true })
-    mapContainer.addEventListener('touchcancel', handleTouchEnd, { passive: true })
-    
-    return () => {
-      mapContainer.removeEventListener('touchstart', handleTouchStart)
-      mapContainer.removeEventListener('touchmove', handleTouchMove)
-      mapContainer.removeEventListener('touchend', handleTouchEnd)
-      mapContainer.removeEventListener('touchcancel', handleTouchEnd)
-    }
-  }, [map, onMapClick])
-
-  // Handle desktop long press
   useMapEvents({
-    mousedown: (e) => {
-      pressPositionRef.current = { latlng: e.latlng }
-      pressTimerRef.current = setTimeout(() => {
-        onMapClick(e.latlng)
-        pressTimerRef.current = null
-        pressPositionRef.current = null
-      }, 600)
-    },
-    mouseup: () => {
-      if (pressTimerRef.current) {
-        clearTimeout(pressTimerRef.current)
-        pressTimerRef.current = null
-        pressPositionRef.current = null
-      }
-    },
-    mousemove: (e) => {
-      if (pressTimerRef.current && pressPositionRef.current) {
-        const distance = map.distance(pressPositionRef.current.latlng, e.latlng)
-        if (distance > 0.0001) {
-          clearTimeout(pressTimerRef.current)
-          pressTimerRef.current = null
-          pressPositionRef.current = null
-        }
-      }
+    click: (e) => {
+      onMapClick(e.latlng)
     }
   })
 
@@ -150,26 +80,27 @@ const MapView = forwardRef((props, ref) => {
   const [error, setError] = useState(null)
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [userMarkers, setUserMarkers] = useState([])
+  const [editingMarkerId, setEditingMarkerId] = useState(null)
+  const [editingAddress, setEditingAddress] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
 
-  // Load markers from localStorage on mount
+  // Load markers from Supabase on mount
   useEffect(() => {
-    const savedMarkers = localStorage.getItem('userMarkers')
-    if (savedMarkers) {
-      try {
-        const markers = JSON.parse(savedMarkers)
-        setUserMarkers(markers)
-      } catch (error) {
-        console.error('Failed to load markers from localStorage:', error)
+    const loadMarkers = async () => {
+      const { data, error } = await fetchMarkers()
+      if (error) {
+        console.error('Failed to load markers from Supabase:', error)
+        setError('Грешка при зареждане на маркерите')
+        setSnackbarOpen(true)
+      } else if (data) {
+        // Mark all loaded markers as saved
+        const savedMarkers = data.map(marker => ({ ...marker, isSaved: true }))
+        setUserMarkers(savedMarkers)
       }
     }
-  }, [])
 
-  // Save markers to localStorage when they change
-  useEffect(() => {
-    if (userMarkers.length > 0) {
-      localStorage.setItem('userMarkers', JSON.stringify(userMarkers))
-    }
-  }, [userMarkers])
+    loadMarkers()
+  }, [])
 
   // Get user's current location
   const getUserLocation = () => {
@@ -289,24 +220,74 @@ const MapView = forwardRef((props, ref) => {
     }
   }
 
-  // Handle map click to add marker
+  // Handle map click to add marker (not saved yet)
   const handleMapClick = async (latlng) => {
-    const markerId = Date.now()
+    // Check if the marker is within allowed area
+    const distance = calculateDistance(
+      latlng.lat,
+      latlng.lng,
+      CHEPINTSI_CENTER[0],
+      CHEPINTSI_CENTER[1]
+    )
 
-    // Add marker immediately with loading address
-    const newMarker = {
-      id: markerId,
+    if (distance > MAX_DISTANCE_KM) {
+      setError(`Маркерът трябва да е в района на Чепинци (в радиус от ${MAX_DISTANCE_KM} км)`)
+      setSnackbarOpen(true)
+      return
+    }
+
+    const tempId = `temp-${Date.now()}`
+
+    // Add unsaved marker to UI with loading address
+    const tempMarker = {
+      id: tempId,
       lat: latlng.lat,
       lng: latlng.lng,
       createdAt: new Date().toISOString(),
-      address: 'Зареждане...'
+      address: 'Зареждане...',
+      isSaved: false // Not saved to database yet
     }
-    setUserMarkers(prev => [...prev, newMarker])
+    setUserMarkers(prev => [...prev, tempMarker])
+
+    // Automatically open editing mode for the new marker
+    setEditingMarkerId(tempId)
+    setEditingAddress('Зареждане...')
 
     // Fetch address in background
     const address = await fetchAddress(latlng.lat, latlng.lng)
 
-    // Update marker with fetched address
+    // Update marker with fetched address (still not saved to DB)
+    setUserMarkers(prev =>
+      prev.map(marker =>
+        marker.id === tempId
+          ? { ...marker, address }
+          : marker
+      )
+    )
+
+    // Also update the editing address if this marker is still being edited
+    setEditingAddress(address)
+  }
+
+  // Handle marker drag end - fetch new address
+  const handleMarkerDragEnd = async (markerId, newPosition) => {
+    // Update position and set loading address
+    setUserMarkers(prev =>
+      prev.map(marker =>
+        marker.id === markerId
+          ? { ...marker, lat: newPosition.lat, lng: newPosition.lng, address: 'Зареждане...' }
+          : marker
+      )
+    )
+
+    // If this marker is being edited, update the editing address too
+    if (editingMarkerId === markerId) {
+      setEditingAddress('Зареждане...')
+    }
+
+    // Fetch new address for the new position
+    const address = await fetchAddress(newPosition.lat, newPosition.lng)
+
     setUserMarkers(prev =>
       prev.map(marker =>
         marker.id === markerId
@@ -314,20 +295,91 @@ const MapView = forwardRef((props, ref) => {
           : marker
       )
     )
+
+    // Update editing address if this marker is still being edited
+    if (editingMarkerId === markerId) {
+      setEditingAddress(address)
+    }
+  }
+
+  // Save marker to Supabase
+  const handleSaveMarker = async (marker) => {
+    // Validate marker is still within bounds before saving
+    const distance = calculateDistance(
+      marker.lat,
+      marker.lng,
+      CHEPINTSI_CENTER[0],
+      CHEPINTSI_CENTER[1]
+    )
+
+    if (distance > MAX_DISTANCE_KM) {
+      setError(`Маркерът е твърде далеч от Чепинци. Моля, преместете го в района на селото.`)
+      setSnackbarOpen(true)
+      return
+    }
+
+    setIsSaving(true)
+
+    const { data: savedMarker, error: saveError } = await createMarker({
+      lat: marker.lat,
+      lng: marker.lng,
+      address: editingAddress || marker.address
+    })
+
+    setIsSaving(false)
+
+    if (saveError) {
+      console.error('Failed to save marker:', saveError)
+      setError('Грешка при запазване на маркер')
+      setSnackbarOpen(true)
+      return
+    }
+
+    // Replace unsaved marker with saved one
+    setUserMarkers(prev =>
+      prev.map(m =>
+        m.id === marker.id
+          ? { ...savedMarker, isSaved: true }
+          : m
+      )
+    )
+
+    // Clear editing state
+    setEditingMarkerId(null)
+    setEditingAddress('')
   }
 
   // Remove marker by ID
-  const handleRemoveMarker = (markerId) => {
-    setUserMarkers(prev => {
-      const updated = prev.filter(marker => marker.id !== markerId)
-      // Update localStorage immediately when removing
-      if (updated.length === 0) {
-        localStorage.removeItem('userMarkers')
-      } else {
-        localStorage.setItem('userMarkers', JSON.stringify(updated))
-      }
-      return updated
-    })
+  const handleRemoveMarker = async (marker) => {
+    // If marker is not saved yet, just remove from state
+    if (!marker.isSaved) {
+      setUserMarkers(prev => prev.filter(m => m.id !== marker.id))
+      setEditingMarkerId(null)
+      setEditingAddress('')
+      return
+    }
+
+    // If marker is saved, delete from Supabase
+    const { success, error } = await deleteMarker(marker.id)
+
+    if (error) {
+      console.error('Failed to delete marker:', error)
+      setError('Грешка при изтриване на маркер')
+      setSnackbarOpen(true)
+      return
+    }
+
+    if (success) {
+      setUserMarkers(prev => prev.filter(m => m.id !== marker.id))
+    }
+  }
+
+  // Handle popup open for editing
+  const handleMarkerClick = (marker) => {
+    if (!marker.isSaved) {
+      setEditingMarkerId(marker.id)
+      setEditingAddress(marker.address)
+    }
   }
 
   return (
@@ -337,6 +389,9 @@ const MapView = forwardRef((props, ref) => {
         zoom={DEFAULT_ZOOM}
         style={{ height: '100%', width: '100%' }}
         scrollWheelZoom={true}
+        maxBounds={CHEPINTSI_BOUNDS}
+        maxBoundsViscosity={0.7}
+        minZoom={15}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -384,50 +439,114 @@ const MapView = forwardRef((props, ref) => {
           <Marker
             key={marker.id}
             position={[marker.lat, marker.lng]}
+            draggable={!marker.isSaved}
+            eventHandlers={{
+              click: () => handleMarkerClick(marker),
+              dragend: (e) => {
+                if (!marker.isSaved) {
+                  const newPos = e.target.getLatLng()
+                  handleMarkerDragEnd(marker.id, newPos)
+                }
+              }
+            }}
             icon={L.icon({
               iconUrl: 'data:image/svg+xml;base64,' + btoa(`
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32">
-                  <path d="M12 0C7.58 0 4 3.58 4 8c0 5.25 8 13 8 13s8-7.75 8-13c0-4.42-3.58-8-8-8zm0 11c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z" fill="#FF5722" stroke="white" stroke-width="1"/>
+                <svg fill="${marker.isSaved ? '#F44336' : '#FF9800'}" height="77" width="77" version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                  <path d="M375.1,157.988c-4.599-17.701-19.224-32.168-38.458-39.895V104c0-14.908-10.248-27.466-24.069-31.004 c0.041-0.327,0.069-0.658,0.069-0.996c0-39.701-32.299-72-72-72s-72,32.299-72,72v81.376c-9.311,3.303-16,12.195-16,22.624v320h-8 c-4.418,0-8,3.582-8,8s3.582,8,8,8h64c4.418,0,8-3.582,8-8s-3.582-8-8-8h-8V176c0-10.429-6.689-19.321-16-22.624V72 c0-30.878,25.122-56,56-56s56,25.122,56,56c0,0.338,0.028,0.669,0.069,0.996C282.89,76.534,272.643,89.092,272.643,104v14.094 c-19.234,7.726-33.858,22.194-38.458,39.895c-0.623,2.396-0.101,4.947,1.415,6.906c1.515,1.959,3.852,3.106,6.328,3.106h30.715 c0,17.645,14.355,32,32,32s32-14.355,32-32h30.715c2.477,0,4.813-1.147,6.328-3.106C375.201,162.935,375.723,160.385,375.1,157.988z M176.643,168c4.411,0,8,3.589,8,8v256h-16V176C168.643,171.589,172.231,168,176.643,168z M168.643,496v-48h16v48H168.643z M288.643,104c0-8.822,7.178-16,16-16s16,7.178,16,16v9.468c-5.171-0.957-10.529-1.468-16-1.468s-10.829,0.511-16,1.468V104z M304.643,184c-8.822,0-16-7.178-16-16h32C320.643,176.822,313.465,184,304.643,184z M254.068,152c9.116-14.357,28.628-24,50.575-24 s41.458,9.643,50.575,24H254.068z" stroke="white" stroke-width="8"/>
                 </svg>
               `),
-              iconSize: [32, 32],
-              iconAnchor: [16, 32],
-              popupAnchor: [0, -32]
+              iconSize: [77, 77],
+              iconAnchor: [39, 72],
+              popupAnchor: [0, -72]
             })}
           >
             <Popup>
-              <div style={{ textAlign: 'center', minWidth: '150px' }}>
-                <strong>Маркер</strong>
+              <div style={{ textAlign: 'center', minWidth: '200px' }}>
+                <strong>{marker.isSaved ? 'Доклад за проблем' : 'Нов доклад'}</strong>
                 <br />
-                {marker.address && (
+
+                {!marker.isSaved && editingMarkerId === marker.id ? (
+                  // Editable mode for unsaved markers
                   <>
-                    <div style={{
-                      margin: '8px 0',
-                      padding: '4px 8px',
-                      backgroundColor: '#f5f5f5',
-                      borderRadius: '4px',
-                      fontSize: '0.9em'
-                    }}>
-                      {marker.address}
-                    </div>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      label="Адрес"
+                      value={editingAddress}
+                      onChange={(e) => setEditingAddress(e.target.value)}
+                      sx={{ mt: 1, mb: 1 }}
+                      multiline
+                      rows={2}
+                    />
+                    <small style={{ color: '#666', display: 'block', marginBottom: '8px' }}>
+                      {marker.address === 'Зареждане...' ? 'Зареждане на адрес...' : 'Можете да редактирате адреса'}
+                    </small>
+                    <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                      <Button
+                        variant="contained"
+                        color="success"
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleSaveMarker(marker)
+                        }}
+                        disabled={isSaving || marker.address === 'Зареждане...'}
+                        startIcon={isSaving ? <CircularProgress size={16} /> : null}
+                      >
+                        {isSaving ? 'Запазване...' : 'Запази'}
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        color="error"
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleRemoveMarker(marker)
+                        }}
+                        disabled={isSaving}
+                      >
+                        Откажи
+                      </Button>
+                    </Box>
+                    <small style={{ color: '#999', display: 'block', marginTop: '8px', fontSize: '0.75em' }}>
+                      Може да преместите маркера
+                    </small>
+                  </>
+                ) : (
+                  // Read-only mode for saved markers
+                  <>
+                    {marker.address && (
+                      <div style={{
+                        margin: '8px 0',
+                        padding: '8px',
+                        backgroundColor: '#f5f5f5',
+                        borderRadius: '4px',
+                        fontSize: '0.9em'
+                      }}>
+                        {marker.address}
+                      </div>
+                    )}
+                    {marker.createdAt && (
+                      <small style={{ color: '#666', display: 'block', marginBottom: '8px' }}>
+                        {new Date(marker.createdAt).toLocaleString('bg-BG')}
+                      </small>
+                    )}
+                    {marker.isSaved && (
+                      <Button
+                        variant="contained"
+                        color="error"
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleRemoveMarker(marker)
+                        }}
+                        sx={{ mt: 1 }}
+                      >
+                        Изтрий
+                      </Button>
+                    )}
                   </>
                 )}
-                <small style={{ color: '#666' }}>
-                  {new Date(marker.createdAt).toLocaleString('bg-BG')}
-                </small>
-                <br />
-                <Button
-                  variant="contained"
-                  color="error"
-                  size="small"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleRemoveMarker(marker.id)
-                  }}
-                  sx={{ mt: 1 }}
-                >
-                  Изтрий
-                </Button>
               </div>
             </Popup>
           </Marker>

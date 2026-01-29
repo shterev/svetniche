@@ -1,0 +1,48 @@
+<svg
+  width="420"
+  height="80"
+  viewBox="0 0 420 80"
+  fill="none"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <!-- Bulb icon -->
+  <g transform="translate(10,8)">
+    <!-- Bulb outline -->
+    <path
+      d="M30 2C17.85 2 8 11.85 8 24c0 8.2 4.5 15.3 11.1 19.1V50c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2v-6.9C47.5 39.3 52 32.2 52 24 52 11.85 42.15 2 30 2Z"
+      stroke="#1F6F6B"
+      stroke-width="3"
+      fill="none"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+
+    <!-- Filament -->
+    <path
+      d="M24 28c2-3 10-3 12 0"
+      stroke="#F59E0B"
+      stroke-width="3"
+      stroke-linecap="round"
+    />
+
+    <!-- Bulb base -->
+    <path
+      d="M22 52h16M24 58h12"
+      stroke="#1F6F6B"
+      stroke-width="3"
+      stroke-linecap="round"
+    />
+  </g>
+
+  <!-- Text -->
+  <text
+    x="90"
+    y="52"
+    font-family="Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
+    font-size="36"
+    font-weight="600"
+    fill="#1F6F6B"
+  >
+    svetni<tspan fill="#F59E0B">Che</tspan>
+  </text>
+</svg>

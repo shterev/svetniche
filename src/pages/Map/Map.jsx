@@ -13,6 +13,7 @@ import {
   MyLocation,
 } from '@mui/icons-material'
 import MapView from '../../components/MapView'
+import logo from '../../assets/logo.svg'
 
 const Map = () => {
   const navigate = useNavigate()
@@ -26,7 +27,7 @@ const Map = () => {
 
   return (
     <Box sx={{ height: '100dvh', fallbacks: [{ height: '100vh' }] }}>
-      <AppBar position="static" color="primary" elevation={1}>
+      <AppBar position="static" elevation={1} sx={{ backgroundColor: '#000000' }}>
         <Toolbar sx={{ minHeight: 48, height: 48 }}>
           <IconButton
             edge="start"
@@ -36,6 +37,13 @@ const Map = () => {
           >
             <ArrowBack />
           </IconButton>
+          <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', ml: -6 }}>
+            <img
+              src={logo}
+              alt="svetniChe"
+              style={{ height: '40px', width: 'auto' }}
+            />
+          </Box>
         </Toolbar>
       </AppBar>
 

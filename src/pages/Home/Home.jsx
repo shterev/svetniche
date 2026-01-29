@@ -11,15 +11,15 @@ import {
   Stack,
   AppBar,
   Toolbar,
-  IconButton,
 } from '@mui/material'
 import {
   Lightbulb,
   Map,
-  AdminPanelSettings,
   CheckCircle,
   Error,
 } from '@mui/icons-material'
+import { fetchMarkers } from '../../utils/markers'
+import logo from '../../assets/logo.svg'
 
 const Home = () => {
   const navigate = useNavigate()
@@ -41,41 +41,32 @@ const Home = () => {
     return `Преди ${diffDays} ${diffDays === 1 ? 'ден' : 'дни'}`
   }
 
-  // Load markers from localStorage
+  // Load markers from Supabase
   useEffect(() => {
-    const loadMarkers = () => {
-      const savedMarkers = localStorage.getItem('userMarkers')
-      if (savedMarkers) {
-        try {
-          const parsedMarkers = JSON.parse(savedMarkers)
-          // Sort by newest first
-          const sortedMarkers = parsedMarkers.sort((a, b) => 
-            new Date(b.createdAt) - new Date(a.createdAt)
-          )
-          setMarkers(sortedMarkers)
-          setReportCount(sortedMarkers.length)
-        } catch (error) {
-          console.error('Failed to load markers from localStorage:', error)
-          setMarkers([])
-          setReportCount(0)
-        }
-      } else {
+    const loadMarkers = async () => {
+      const { data, error } = await fetchMarkers()
+
+      if (error) {
+        console.error('Failed to load markers from Supabase:', error)
         setMarkers([])
         setReportCount(0)
+      } else if (data) {
+        // Sort by newest first
+        const sortedMarkers = data.sort((a, b) =>
+          new Date(b.createdAt) - new Date(a.createdAt)
+        )
+        setMarkers(sortedMarkers)
+        setReportCount(sortedMarkers.length)
       }
     }
 
     // Load initially
     loadMarkers()
 
-    // Listen for storage changes from other tabs/windows
-    window.addEventListener('storage', loadMarkers)
-
-    // Poll for changes every second (in case MapView updates in same tab)
-    const interval = setInterval(loadMarkers, 1000)
+    // Refresh every 10 seconds to show new reports
+    const interval = setInterval(loadMarkers, 10000)
 
     return () => {
-      window.removeEventListener('storage', loadMarkers)
       clearInterval(interval)
     }
   }, [])
@@ -83,15 +74,13 @@ const Home = () => {
   return (
     <Box sx={{ flexGrow: 1 }}>
       {/* App Bar */}
-      <AppBar position="static" color="primary" elevation={1}>
-        <Toolbar>
-          <Lightbulb sx={{ mr: 2 }} />
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            Светнички - Chepintsi
-          </Typography>
-          <IconButton color="inherit">
-            <AdminPanelSettings />
-          </IconButton>
+      <AppBar position="static" elevation={1} sx={{ backgroundColor: '#000000' }}>
+        <Toolbar sx={{ justifyContent: 'center', py: 1 }}>
+          <img
+            src={logo}
+            alt="svetniChe"
+            style={{ height: '60px', width: 'auto' }}
+          />
         </Toolbar>
       </AppBar>
 
@@ -101,9 +90,6 @@ const Home = () => {
         <Box sx={{ textAlign: 'center', mb: 6 }}>
           <Typography variant="h2" component="h1" gutterBottom>
             Докладвай повреда на улично осветление
-          </Typography>
-          <Typography variant="h6" color="text.secondary" paragraph>
-            Report Broken Street Lights in Chepintsi, Bulgaria
           </Typography>
           <Box sx={{ mt: 3 }}>
             <Button
@@ -181,23 +167,23 @@ const Home = () => {
             <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
               Последни доклади
             </Typography>
-            <Stack spacing={2}>
+            <Stack spacing={1}>
               {markers.map((marker) => (
-                <Card key={marker.id}>
-                  <CardContent>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <Box sx={{ flex: 1 }}>
-                        <Typography variant="h6" component="div" gutterBottom>
+                <Card key={marker.id} variant="outlined">
+                  <CardContent sx={{ py: 1, px: 1, '&:last-child': { pb: 1 } }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1 }}>
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography variant="body1" component="div" sx={{ fontWeight: 600, mb: 0.5 }}>
                           {marker.address || 'Зареждане адрес...'}
                         </Typography>
-                        <Typography variant="body2" color="text.secondary" paragraph>
-                          Координати: {marker.lat.toFixed(6)}, {marker.lng.toFixed(6)}
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                          {marker.lat.toFixed(6)}, {marker.lng.toFixed(6)}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          Докладвано {getRelativeTime(marker.createdAt)}
+                          {getRelativeTime(marker.createdAt)}
                         </Typography>
                       </Box>
-                      <Chip label="Чака" color="error" size="small" />
+                      <Chip label="Чака" color="error" size="small" sx={{ flexShrink: 0 }} />
                     </Box>
                   </CardContent>
                 </Card>
