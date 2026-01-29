@@ -17,6 +17,9 @@ import {
   Map,
   CheckCircle,
   Error,
+  Phone,
+  Email,
+  LocationOn,
 } from '@mui/icons-material'
 import { fetchMarkers } from '../../utils/markers'
 import logo from '../../assets/logo.svg'
@@ -191,6 +194,50 @@ const Home = () => {
             </Stack>
           </>
         )}
+
+        {/* Contact Section */}
+        <Card sx={{ mt: 4 }}>
+          <CardContent>
+            <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
+              Контакт за поправки
+            </Typography>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
+              ЛОГ - СИБЕРИЯ ЕООД
+            </Typography>
+            <Stack spacing={1.5}>
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+                <LocationOn color="primary" sx={{ mt: 0.25 }} />
+                <Typography variant="body2">
+                  гр. София, п.к. 1407, бул. "Никола Й. Вапцаров" № 51 А
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Phone color="primary" />
+                <Typography variant="body2">
+                  <a href="tel:0700890096" style={{ color: 'inherit', textDecoration: 'none' }}>
+                    0700 890 96
+                  </a>
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Email color="primary" />
+                <Typography variant="body2">
+                  <a href="mailto:office@log-siberia.com" style={{ color: 'inherit', textDecoration: 'none' }}>
+                    office@log-siberia.com
+                  </a>
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Email color="primary" />
+                <Typography variant="body2">
+                  <a href="mailto:ulichnoosvetlenie@log-siberia.com" style={{ color: 'inherit', textDecoration: 'none' }}>
+                    ulichnoosvetlenie@log-siberia.com
+                  </a>
+                </Typography>
+              </Box>
+            </Stack>
+          </CardContent>
+        </Card>
 
         {/* Info Box */}
         <Card sx={{ mt: 4, bgcolor: 'primary.main', color: 'primary.contrastText' }}>
