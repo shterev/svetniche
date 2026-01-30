@@ -74,7 +74,20 @@ const MapClickHandler = ({ onMapClick }) => {
   return null
 }
 
+// Component to fly map to a marker when navigating from Home
+const MapFocusController = ({ focusCoordinates, markersLoaded }) => {
+  const map = useMap()
+
+  useEffect(() => {
+    if (!focusCoordinates || !markersLoaded) return
+    map.flyTo([focusCoordinates.lat, focusCoordinates.lng], 19, { duration: 1 })
+  }, [map, focusCoordinates, markersLoaded])
+
+  return null
+}
+
 const MapView = forwardRef((props, ref) => {
+  const { focusCoordinates = null, focusMarkerId = null } = props
   const [userLocation, setUserLocation] = useState(null)
   const [shouldFlyTo, setShouldFlyTo] = useState(false)
   const [error, setError] = useState(null)
@@ -82,7 +95,21 @@ const MapView = forwardRef((props, ref) => {
   const [userMarkers, setUserMarkers] = useState([])
   const [editingMarkerId, setEditingMarkerId] = useState(null)
   const [editingAddress, setEditingAddress] = useState('')
+  const [editingNumber, setEditingNumber] = useState('')
   const [isSaving, setIsSaving] = useState(false)
+  const [markersLoaded, setMarkersLoaded] = useState(false)
+  const focusedMarkerRef = useRef(null)
+
+  // Open focused marker popup after map flies to it
+  useEffect(() => {
+    if (!focusMarkerId || !markersLoaded) return
+    const timer = setTimeout(() => {
+      const el = focusedMarkerRef.current
+      if (el?.getLeafletElement?.()) el.getLeafletElement().openPopup()
+      else if (el?.leafletElement) el.leafletElement.openPopup()
+    }, 1500)
+    return () => clearTimeout(timer)
+  }, [focusMarkerId, markersLoaded])
 
   // Load markers from Supabase on mount
   useEffect(() => {
@@ -92,10 +119,12 @@ const MapView = forwardRef((props, ref) => {
         console.error('Failed to load markers from Supabase:', error)
         setError('Грешка при зареждане на маркерите')
         setSnackbarOpen(true)
+        setMarkersLoaded(true)
       } else if (data) {
         // Mark all loaded markers as saved
         const savedMarkers = data.map(marker => ({ ...marker, isSaved: true }))
         setUserMarkers(savedMarkers)
+        setMarkersLoaded(true)
       }
     }
 
@@ -252,6 +281,7 @@ const MapView = forwardRef((props, ref) => {
     // Automatically open editing mode for the new marker
     setEditingMarkerId(tempId)
     setEditingAddress('Зареждане...')
+    setEditingNumber('')
 
     // Fetch address in background
     const address = await fetchAddress(latlng.lat, latlng.lng)
@@ -304,6 +334,19 @@ const MapView = forwardRef((props, ref) => {
 
   // Save marker to Supabase
   const handleSaveMarker = async (marker) => {
+    // Validate number field: required and digits only
+    const numberTrimmed = editingNumber.trim()
+    if (!numberTrimmed) {
+      setError('Моля, въведете номер')
+      setSnackbarOpen(true)
+      return
+    }
+    if (!/^\d+$/.test(numberTrimmed)) {
+      setError('Полето "Номер" приема само цифри')
+      setSnackbarOpen(true)
+      return
+    }
+
     // Validate marker is still within bounds before saving
     const distance = calculateDistance(
       marker.lat,
@@ -318,12 +361,14 @@ const MapView = forwardRef((props, ref) => {
       return
     }
 
+    const combinedAddress = `ул. ${editingAddress || marker.address}, ${numberTrimmed}`
+
     setIsSaving(true)
 
     const { data: savedMarker, error: saveError } = await createMarker({
       lat: marker.lat,
       lng: marker.lng,
-      address: editingAddress || marker.address
+      address: combinedAddress
     })
 
     setIsSaving(false)
@@ -347,6 +392,7 @@ const MapView = forwardRef((props, ref) => {
     // Clear editing state
     setEditingMarkerId(null)
     setEditingAddress('')
+    setEditingNumber('')
   }
 
   // Remove marker by ID
@@ -356,6 +402,7 @@ const MapView = forwardRef((props, ref) => {
       setUserMarkers(prev => prev.filter(m => m.id !== marker.id))
       setEditingMarkerId(null)
       setEditingAddress('')
+      setEditingNumber('')
       return
     }
 
@@ -379,7 +426,14 @@ const MapView = forwardRef((props, ref) => {
     if (!marker.isSaved) {
       setEditingMarkerId(marker.id)
       setEditingAddress(marker.address)
+      setEditingNumber('')
     }
+  }
+
+  // Allow only digits in number field
+  const handleNumberChange = (e) => {
+    const value = e.target.value.replace(/\D/g, '')
+    setEditingNumber(value)
   }
 
   return (
@@ -438,6 +492,7 @@ const MapView = forwardRef((props, ref) => {
         {userMarkers.map(marker => (
           <Marker
             key={marker.id}
+            ref={marker.id === focusMarkerId ? focusedMarkerRef : undefined}
             position={[marker.lat, marker.lng]}
             draggable={!marker.isSaved}
             eventHandlers={{
@@ -461,9 +516,8 @@ const MapView = forwardRef((props, ref) => {
             })}
           >
             <Popup>
-              <div style={{ textAlign: 'center', minWidth: '200px' }}>
+              <div style={{ textAlign: 'center', minWidth: '220px' }}>
                 <strong>{marker.isSaved ? 'Доклад за проблем' : 'Нов доклад'}</strong>
-                <br />
 
                 {!marker.isSaved && editingMarkerId === marker.id ? (
                   // Editable mode for unsaved markers
@@ -475,8 +529,28 @@ const MapView = forwardRef((props, ref) => {
                       value={editingAddress}
                       onChange={(e) => setEditingAddress(e.target.value)}
                       sx={{ mt: 1, mb: 1 }}
-                      multiline
-                      rows={2}
+                    />
+                    <TextField
+                      fullWidth
+                      size="small"
+                      label="Номер:"
+                      value={editingNumber}
+                      onChange={handleNumberChange}
+                      required
+                      slotProps={{ htmlInput: { inputMode: 'numeric', maxLength: 10 } }}
+                      sx={{
+                        mb: 1,
+                        ...(!editingNumber.trim() && {
+                          '& .MuiOutlinedInput-notchedOutline': {
+                            borderColor: 'error.main',
+                            borderWidth: '2px'
+                          }
+                        })
+                      }}
+                      placeholder="Само цифри"
+                      color={!editingNumber.trim() ? 'warning' : undefined}
+                      error={!!editingNumber && !/^\d+$/.test(editingNumber)}
+                      helperText={!editingNumber.trim() ? 'Задължително поле' : ''}
                     />
                     <small style={{ color: '#666', display: 'block', marginBottom: '8px' }}>
                       {marker.address === 'Зареждане...' ? 'Зареждане на адрес...' : 'Можете да редактирате адреса'}
@@ -490,7 +564,7 @@ const MapView = forwardRef((props, ref) => {
                           e.stopPropagation()
                           handleSaveMarker(marker)
                         }}
-                        disabled={isSaving || marker.address === 'Зареждане...'}
+                        disabled={isSaving || marker.address === 'Зареждане...' || !editingNumber.trim()}
                         startIcon={isSaving ? <CircularProgress size={16} /> : null}
                       >
                         {isSaving ? 'Запазване...' : 'Запази'}
@@ -553,6 +627,10 @@ const MapView = forwardRef((props, ref) => {
         ))}
 
         <MapController userLocation={userLocation} shouldFlyTo={shouldFlyTo} />
+        <MapFocusController
+          focusCoordinates={focusCoordinates}
+          markersLoaded={markersLoaded}
+        />
         <MapClickHandler onMapClick={handleMapClick} />
       </MapContainer>
 

@@ -76,14 +76,27 @@ const Home = () => {
 
   return (
     <Box sx={{ flexGrow: 1 }}>
-      {/* App Bar */}
       <AppBar position="static" elevation={1} sx={{ backgroundColor: '#000000' }}>
         <Toolbar sx={{ justifyContent: 'center', py: 1 }}>
-          <img
-            src={logo}
-            alt="svetniChe"
-            style={{ height: '60px', width: 'auto' }}
-          />
+          <Box
+            component="button"
+            onClick={() => navigate('/')}
+            sx={{
+              cursor: 'pointer',
+              border: 'none',
+              background: 'none',
+              padding: 0,
+              display: 'flex',
+              alignItems: 'center'
+            }}
+            aria-label="Начало"
+          >
+            <img
+              src={logo}
+              alt="svetniChe"
+              style={{ height: '60px', width: 'auto' }}
+            />
+          </Box>
         </Toolbar>
       </AppBar>
 
@@ -146,22 +159,6 @@ const Home = () => {
             </CardContent>
           </Card>
 
-          <Card sx={{ flex: 1 }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <Lightbulb color="warning" sx={{ mr: 1 }} />
-                <Typography variant="h6" component="div">
-                  Общо
-                </Typography>
-              </Box>
-              <Typography variant="h3" component="div" color="warning.main">
-                {reportCount + 27}
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                Всички доклади
-              </Typography>
-            </CardContent>
-          </Card>
         </Stack>
 
         {/* Recent Reports - Show only if there are markers */}
@@ -172,7 +169,27 @@ const Home = () => {
             </Typography>
             <Stack spacing={1}>
               {markers.map((marker) => (
-                <Card key={marker.id} variant="outlined">
+                <Card
+                  key={marker.id}
+                  variant="outlined"
+                  onClick={() =>
+                    navigate('/map', {
+                      state: {
+                        focusMarkerId: marker.id,
+                        focusLat: marker.lat,
+                        focusLng: marker.lng
+                      }
+                    })
+                  }
+                  sx={{
+                    cursor: 'pointer',
+                    transition: 'box-shadow 0.2s, background-color 0.2s',
+                    '&:hover': {
+                      boxShadow: 2,
+                      bgcolor: 'action.hover'
+                    }
+                  }}
+                >
                   <CardContent sx={{ py: 1, px: 1, '&:last-child': { pb: 1 } }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1 }}>
                       <Box sx={{ flex: 1, minWidth: 0 }}>
